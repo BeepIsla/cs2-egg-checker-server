@@ -1,0 +1,78 @@
+name: Build
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+    workflow_dispatch:
+
+jobs:
+    build:
+        name: Build (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      artifact-name: cs2-egg-checker-server-linux
+                      cmake-args: "-DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/14 -DCMAKE_BUILD_RPATH=$ORIGIN"
+                    - os: windows-latest
+                      artifact-name: cs2-egg-checker-server-windows
+                      cmake-args: "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+
+        steps:
+            - name: Checkout repository recursively
+              uses: actions/checkout@v7
+              with:
+                  submodules: recursive
+                  fetch-depth: 0
+
+            - name: Install dependencies (Linux)
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y clang ninja-build g++-14 libstdc++-14-dev
+
+            - name: Setup MSVC environment (Windows)
+              if: runner.os == 'Windows'
+              uses: ilammy/msvc-dev-cmd@v1
+              with:
+                  arch: x64
+
+            - name: Setup ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                  key: ${{ matrix.os }}-release
+                  max-size: 2G
+
+            - name: Configure CMake (Release)
+              run: cmake --preset release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ${{ matrix.cmake-args }}
+
+            - name: Build (Release)
+              run: cmake --build --preset release
+
+            - name: Show ccache stats
+              run: ccache -s
+
+            - name: Prepare build artifacts
+              shell: bash
+              run: |
+                  mkdir -p dist
+                  if [ "${{ runner.os }}" = "Windows" ]; then
+                    cp build/release/bin/cs2-egg-checker-server.exe dist/
+                    cp build/release/bin/steam_api64.dll dist/
+                    [ -f build/release/bin/cs2-egg-checker-server.pdb ] && cp build/release/bin/cs2-egg-checker-server.pdb dist/ || true
+                  else
+                    cp build/release/bin/cs2-egg-checker-server dist/
+                    cp build/release/bin/libsteam_api.so dist/
+                    chmod +x dist/cs2-egg-checker-server
+                  fi
+
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v7
+              with:
+                  name: ${{ matrix.artifact-name }}
+                  path: dist/
+                  if-no-files-found: error

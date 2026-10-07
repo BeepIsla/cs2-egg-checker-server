@@ -1,0 +1,10 @@
+.vs*
+build
+private
+submodules/steamworks/*
+!submodules/steamworks/public
+!submodules/steamworks/redistributable_bin
+submodules/steamworks/public/**/*.lib
+submodules/steamworks/public/**/*.dll
+submodules/steamworks/public/**/*.so
+submodules/steamworks/public/**/*.dylib

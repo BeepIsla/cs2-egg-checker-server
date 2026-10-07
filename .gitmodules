@@ -1,0 +1,6 @@
+[submodule "submodules/protobufs"]
+	path = submodules/protobufs
+	url = https://github.com/SteamTracking/Protobufs.git
+[submodule "submodules/s2sdk"]
+	path = submodules/s2sdk
+	url = https://github.com/alliedmodders/s2sdk.git
