@@ -115,6 +115,7 @@ int main(int argc, char **argv)
 
 	Server().Init(listensocket, pollgroup);
 	std::signal(SIGINT, SignalHandler);
+	std::signal(SIGTERM, SignalHandler);
 
 	while (!s_bQuit)
 	{
