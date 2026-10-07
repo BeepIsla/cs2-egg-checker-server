@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 	addr.Clear();
 	if (opts.listenaddress && (!addr.ParseString(opts.listenaddress) || addr.m_port == 0))
 	{
-		std::println("Failed to given address '{}'", opts.listenaddress);
+		std::println("Failed to parse given address '{}'", opts.listenaddress);
 		return 1;
 	}
 
