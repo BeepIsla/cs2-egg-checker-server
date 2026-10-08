@@ -334,8 +334,37 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 			OnSOCache(msg.Body());
 			break;
 		}
-		// We don't have to take care of Create, Update, Destroy, CacheUnsubscribed, CacheSubscriptionRefresh, or UpdateMultiple
+		case k_ESOMsg_CacheSubscriptionCheck:
+		{
+			CGCProtoMsg<CMsgSOCacheSubscriptionCheck> msg(data, size);
+
+			CSteamID steamID;
+			steamID.SetFromUint64(msg.Body().owner_soid().id());
+
+			ItemCache *cache = FindCache(steamID, false);
+			if (cache && cache->m_cache.version() == msg.Body().version())
+			{
+				std::println("Found cached data for {}", steamID);
+				GCClient().OnSOCache(cache->m_cache);
+			}
+			else
+			{
+				std::println("Requesting SOCache for {} ({})", steamID, cache ? "Version mismatch" : "Not cached");
+
+				CGCProtoMsg<CMsgSOCacheSubscriptionRefresh> msg(k_ESOMsg_CacheSubscriptionRefresh);
+				if (CMsgSOIDOwner *owner = msg.Body().mutable_owner_soid())
+				{
+					owner->set_type(1);
+					owner->set_id(steamID.ConvertToUint64());
+				}
+				GCClient().Send(msg);
+			}
+
+			break;
+		}
+		// We don't have to take care of Create, Update, Destroy, or UpdateMultiple
 		// We kick the client too quickly anyways
+		// Also CacheUnsubscribed isn't even used by the real server, it keeps the SOCache in memory anyways
 		default:
 		{
 			break;

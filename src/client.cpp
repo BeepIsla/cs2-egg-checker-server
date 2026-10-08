@@ -18,26 +18,7 @@ void CClient::MarkAuthenticated()
 		return;
 	m_authenticated = true;
 
-	// Request the user cache if we don't have it yet
-	// Optimally we would wait for the CacheSubscriptionRefresh and compare it to the actual version from the GC but whatever
-	CGCClient::ItemCache *cache = GCClient().FindCache(m_steamID);
-	if (cache && !cache->BExpired())
-	{
-		std::println("Found cached data for {}", m_steamID);
-		GCClient().OnSOCache(cache->m_cache);
-	}
-	else
-	{
-		std::println("Requesting SOCache for {}", m_steamID);
-
-		CGCProtoMsg<CMsgSOCacheSubscriptionRefresh> msg(k_ESOMsg_CacheSubscriptionRefresh);
-		if (CMsgSOIDOwner *owner = msg.Body().mutable_owner_soid())
-		{
-			owner->set_type(1);
-			owner->set_id(m_steamID.ConvertToUint64());
-		}
-		GCClient().Send(msg);
-	}
+	// The GC will now send us CacheSubscriptionCheck
 }
 
 void CClient::Track(CDB::EUserResult result, const char *extra, const CMsgSOCacheSubscribed *socache)
