@@ -3,6 +3,7 @@ name: Build
 on:
     push:
         branches: ["main"]
+        tags: ["v*"]
     pull_request:
         branches: ["main"]
     workflow_dispatch:
@@ -76,3 +77,24 @@ jobs:
                   name: ${{ matrix.artifact-name }}
                   path: dist/
                   if-no-files-found: error
+
+    release:
+        name: Create Release
+        needs: build
+        if: github.ref_type == 'tag'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+
+        steps:
+            - name: Download artifacts
+              uses: actions/download-artifact@v8
+              with:
+                  path: release-assets
+                  merge-multiple: true
+
+            - name: Release
+              uses: softprops/action-gh-release@v3
+              with:
+                  fail_on_unmatched_files: true
+                  files: release-assets/*
