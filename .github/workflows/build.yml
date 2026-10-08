@@ -91,10 +91,21 @@ jobs:
               uses: actions/download-artifact@v8
               with:
                   path: release-assets
-                  merge-multiple: true
+
+            - name: Package release archives
+              run: |
+                  # Linux archive
+                  cd release-assets/cs2-egg-checker-server-linux
+                  chmod +x cs2-egg-checker-server
+                  tar -czvf ../cs2-egg-checker-server-linux.tar.gz *
+                  # Windows archive
+                  cd ../cs2-egg-checker-server-windows
+                  zip -r ../cs2-egg-checker-server-windows.zip *
 
             - name: Release
               uses: softprops/action-gh-release@v3
               with:
                   fail_on_unmatched_files: true
-                  files: release-assets/*
+                  files: |
+                      release-assets/*.tar.gz
+                      release-assets/*.zip
