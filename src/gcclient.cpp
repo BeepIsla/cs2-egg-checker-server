@@ -145,11 +145,13 @@ void CGCClient::OnGCMessageAvailable(GCMessageAvailable_t *pParam)
 void CGCClient::OnSteamServersDisconnected(SteamServersDisconnected_t *pParam)
 {
 	m_connected = false;
+	std::println("Disconnected from GC");
 }
 
 void CGCClient::OnSteamServerConnectFailure(SteamServerConnectFailure_t *pParam)
 {
 	m_connected = false;
+	std::println("Disconnected from GC");
 }
 
 bool CGCClient::BHelloTimedOut() const
