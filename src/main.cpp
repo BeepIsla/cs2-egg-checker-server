@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 	}
 	if (listensocket == k_HSteamListenSocket_Invalid)
 	{
-		std::println("Failed to create P2P listen socket!");
+		std::println("Failed to create listen socket!");
 		return 1;
 	}
 
