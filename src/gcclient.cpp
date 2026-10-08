@@ -238,11 +238,69 @@ void CGCClient::OnPet(CClient *client, CSOEconItem &pet)
 	if (auto seed = ItemAttribute<313, uint32_t>::Get(pet))
 		lines.push_back(std::format("- Pet Seed: {}", seed.value()));
 
-	// TODO: Figure out which bit means what
-#if 0
 	if (auto achievements = ItemAttribute<185, uint32_t>::Get(pet))
-		lines.push_back(std::format("- Achievements: {}", achievements.value()));
-#endif
+	{
+		struct AchievementCategory
+		{
+			const char                               *categoryName;
+			std::vector<std::pair<int, const char *>> achievements;
+		};
+		static AchievementCategory achievementCategories[] = {
+		    {
+		        "Visited",
+		        {
+		            {0, "Ancient"},
+		            {1, "Anubis"},
+		            {2, "Baggage"},
+		            {3, "Cache"},
+		            {4, "Dust II"},
+		            {5, "Inferno"},
+		            {6, "Italy"},
+		            {7, "Mirage"},
+		            {8, "Nuke"},
+		            {9, "Office"},
+		            {10, "Overpass"},
+		            {11, "Train"},
+		            {12, "Vertigo"},
+		        },
+		    },
+		    {
+		        "Killed by",
+		        {
+		            {13, nullptr}, // This is just regular "Killed" in whatever way, doesn't seem to be used by Panorama anyways
+		            {14, "Gun"},   // Also not used by Panorama?
+		            {15, "Fire"},
+		            {16, "Knife"}, // Also not used by Panorama?
+		            {17, "C4"},
+		            {18, "Zeus"},
+		        },
+		    },
+		};
+
+		for (bool showUnlocked : {false, true})
+		{
+			lines.push_back(showUnlocked ? "- Unlocked Achievements:" : "- Locked Achievements:");
+
+			for (const AchievementCategory &category : achievementCategories)
+			{
+				std::vector<std::string> parts;
+				for (const auto &[bit, name] : category.achievements)
+				{
+					if (!name)
+						continue;
+
+					bool isUnlocked = (achievements.value() & (1U << bit)) != 0;
+					if (isUnlocked == showUnlocked)
+						parts.push_back(name);
+				}
+				if (parts.empty())
+					continue;
+
+				using namespace std::string_view_literals;
+				lines.push_back(std::format("  - {}: {}", category.categoryName, parts | std::views::join_with(", "sv) | std::ranges::to<std::string>()));
+			}
+		}
+	}
 
 	std::string result = lines | std::views::join_with('\n') | std::ranges::to<std::string>();
 	client->PrintToConsole(result);
