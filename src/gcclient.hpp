@@ -65,6 +65,11 @@ public:
 	STEAM_GAMESERVER_CALLBACK(CGCClient, OnSteamServersDisconnected, SteamServersDisconnected_t);
 	STEAM_GAMESERVER_CALLBACK(CGCClient, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
 
+	inline bool BConnectedToGC() const
+	{
+		return m_connected;
+	}
+
 private:
 	bool BHelloTimedOut() const;
 	void SendGCHello();

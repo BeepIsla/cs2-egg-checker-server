@@ -2,6 +2,7 @@
 #include "asserts.hpp"
 #include "client.hpp"
 #include "db.hpp"
+#include "gcclient.hpp"
 #include "helpers.hpp"
 #include <print>
 #include <steam/steamnetworkingtypes.h>
@@ -150,7 +151,7 @@ void CServer::OnSteamNetConnectionStatusChangedCallback(SteamNetConnectionStatus
 
 			// In theory there can be multiple clients with the same SteamID temporarily, if two clients connect via IP they will have SteamID 0
 			// So take this log with a grain of salt.
-			std::println("Client connected {}", steamID);
+			std::println("Client connected {} (GC={})", steamID, GCClient().BConnectedToGC() ? "Connected" : "Disconnected");
 
 			if (SteamGameServerNetworkingSockets()->AcceptConnection(pParam->m_hConn) != k_EResultOK)
 			{
