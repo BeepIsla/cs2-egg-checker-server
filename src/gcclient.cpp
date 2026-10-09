@@ -355,6 +355,16 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 			m_connected = true;
 			break;
 		}
+		case k_EMsgGCServerConnectionStatus:
+		case k_EMsgGCClientConnectionStatus:
+		{
+			CGCProtoMsg<CMsgConnectionStatus> msg(data, size);
+
+			std::println("Received GameCoordinator connection status: {}", GCConnectionStatus_Name(msg.Body().status()));
+			if (msg.Body().status() != GCConnectionStatus_HAVE_SESSION)
+				m_connected = false;
+			break;
+		}
 		case k_ESOMsg_CacheSubscribed:
 		{
 			CGCProtoMsg<CMsgSOCacheSubscribed> msg(data, size);
