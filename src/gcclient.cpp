@@ -247,7 +247,7 @@ void CGCClient::OnPet(CClient *client, CSOEconItem &pet)
 			const char                               *categoryName;
 			std::vector<std::pair<int, const char *>> achievements;
 		};
-		static AchievementCategory achievementCategories[] = {
+		static const AchievementCategory achievementCategories[] = {
 		    {
 		        "Visited",
 		        {
