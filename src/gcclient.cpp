@@ -223,6 +223,31 @@ void CGCClient::OnPet(CClient *client, CSOEconItem &pet)
 			lines.push_back(std::format("- Pet ID: {}", petId.value()));
 		else
 			lines.push_back(std::format("- Pet ID: {}", petTypes[petId.value()]));
+
+		// Style names are based on the filenames, they are shit but whatever
+		static const std::vector<const char *> petStyles[] = {
+		    {},
+
+		    // Egg
+		    {"Egg basic"},
+
+		    // Chick
+		    {"Yellow"},
+
+		    // Catalana
+		    {"Tan", "Tan", "Black white head", "White", "Yellow and red", "Light blue and red", "Black with red head", "Blue", "Dark orange", "Blue and light orange", "Orange blue neck", "Yellow red gradient", "Grey", "Black"},
+
+		    // Silkie
+		    {"White", "White", "Splash", "Blue with red beard", "Leopard", "Red", "Red beetle", "Orange", "Purple", "Aqua with yellow"},
+
+		    // Polish
+		    {"Brown", "Black with white head", "Brown", "White with black wing tips", "Brown with black wing tips", "White black head color", "Blue", "Green with red head", "Green", "Pink", "Blue yellow", "Orange white blue", "Orange with black stripes"},
+		};
+		static constexpr const int petStylesSize = sizeof(petStyles) / sizeof(*petStyles);
+		if (petId.value() < 0 || petId.value() >= petStylesSize || pet.style() < 0 || pet.style() >= petStyles[petId.value()].size())
+			lines.push_back(std::format("- Style: {}", pet.style()));
+		else
+			lines.push_back(std::format("- Style: {}", petStyles[petId.value()][pet.style()]));
 	}
 
 	if (auto foodExpiration = ItemAttribute<303, uint32_t>::Get(pet))
