@@ -103,6 +103,18 @@ void CGCClient::RunFrame()
 			SendGCHello();
 		}
 	}
+	else if (m_connected && SteamGameServer()->BLoggedOn() && BShouldSendReservationUpdate())
+	{
+		std::println("Sending reservation update (Version={})", m_versioncache.m_gameversion);
+		m_lastreservationupdate = clock::now();
+
+		CGCProtoMsg<CMsgGCCStrike15_v2_MatchmakingServerReservationResponse> msg(k_EMsgGCCStrike15_v2_MatchmakingServerReservationResponse);
+		msg.Body().set_map("graphics_settings");
+		msg.Body().set_server_version(m_versioncache.m_gameversion);
+		msg.Body().set_system_load(1);
+		msg.Body().set_cpus_online(1);
+		GCClient().Send(msg);
+	}
 
 	std::erase_if(m_socache, [](const ItemCache &item) {
 		return item.BExpired();
@@ -160,12 +172,19 @@ bool CGCClient::BHelloTimedOut() const
 	return delta.count() >= 5;
 }
 
+bool CGCClient::BShouldSendReservationUpdate() const
+{
+	auto delta = std::chrono::duration_cast<std::chrono::seconds>(clock::now() - m_lastreservationupdate);
+	return delta.count() >= 60;
+}
+
 void CGCClient::SendGCHello()
 {
-	std::println("Sending GC hello (Version={})", m_versioncache.m_version);
+	std::println("Sending GC hello (Version={})", m_versioncache.m_gcversion);
 
 	CGCProtoMsg<CMsgServerHello> msg(k_EMsgGCServerHello);
-	msg.Body().set_version(m_versioncache.m_version);
+	msg.Body().set_version(m_versioncache.m_gcversion);
+	msg.Body().set_client_launcher(0);
 	Send(msg);
 }
 
@@ -519,7 +538,7 @@ void CGCClient::OnHTTPRequestCompleted(HTTPRequestCompleted_t *pResult, bool bIO
 		std::string       s(reinterpret_cast<char *>(data.get()));
 		std::stringstream ss(s);
 		std::string       line;
-		bool              found = false;
+		int               found = 0;
 		while (std::getline(ss, line))
 		{
 			size_t pos = line.find("=");
@@ -529,17 +548,26 @@ void CGCClient::OnHTTPRequestCompleted(HTTPRequestCompleted_t *pResult, bool bIO
 			std::string key = line.substr(0, pos);
 			if (key == "ServerVersion")
 			{
-				found = true;
+				found++;
 
-				std::string value        = line.substr(pos + 1);
-				m_versioncache.m_version = std::stoi(value);
-				std::println("Parsed steam.inf and found ServerVersion: {}", m_versioncache.m_version);
+				std::string value          = line.substr(pos + 1);
+				m_versioncache.m_gcversion = std::stoi(value);
+				std::println("Parsed steam.inf and found ServerVersion: {}", m_versioncache.m_gcversion);
+			}
+			else if (key == "PatchVersion")
+			{
+				found++;
+
+				std::string value = line.substr(pos + 1);
+				std::erase(value, '.');
+				m_versioncache.m_gameversion = std::stoi(value);
+				std::println("Parsed steam.inf and found PatchVersion: {}", m_versioncache.m_gameversion);
 			}
 		}
 
-		if (!found)
+		if (found != 2)
 		{
-			std::println("Failed to find ServerVersion in steam.inf");
+			std::println("Failed to find ServerVersion or PatchVersion in steam.inf");
 			return;
 		}
 

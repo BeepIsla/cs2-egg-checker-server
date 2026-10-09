@@ -37,16 +37,18 @@ public:
 
 private:
 	ISteamGameCoordinator *m_gc;
-	bool                   m_connected = false;
-	clock::time_point      m_lasthello = clock::time_point(std::chrono::seconds(0));
+	bool                   m_connected             = false;
+	clock::time_point      m_lasthello             = clock::time_point(std::chrono::seconds(0));
+	clock::time_point      m_lastreservationupdate = clock::time_point(std::chrono::seconds(0));
 	struct
 	{
-		clock::time_point m_lastupdate = clock::time_point(std::chrono::seconds(0));
-		uint32_t          m_version    = 0;
+		clock::time_point m_lastupdate  = clock::time_point(std::chrono::seconds(0));
+		uint32_t          m_gcversion   = 0;
+		uint32_t          m_gameversion = 0;
 
 		bool BShouldUpdate() const
 		{
-			if (m_version == 0)
+			if (m_gcversion == 0 || m_gameversion == 0)
 				return true;
 
 			auto delta = std::chrono::duration_cast<std::chrono::seconds>(clock::now() - m_lastupdate);
@@ -72,6 +74,7 @@ public:
 
 private:
 	bool BHelloTimedOut() const;
+	bool BShouldSendReservationUpdate() const;
 	void SendGCHello();
 	void OnPet(CClient *client, CSOEconItem &pet);
 	void OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, size_t size);
