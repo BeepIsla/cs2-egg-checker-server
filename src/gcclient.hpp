@@ -40,6 +40,12 @@ public:
 		{
 			return std::chrono::duration_cast<std::chrono::minutes>(m_timecacheexpiresat - clock::now());
 		}
+
+		inline void UpdateCachedTime()
+		{
+			m_timecached         = clock::now();
+			m_timecacheexpiresat = m_timecached + CACHE_DURATION;
+		}
 	};
 
 private:
@@ -68,7 +74,7 @@ public:
 	CGCClient();
 	void       RunFrame();
 	void       Send(const IGCProtoMsg &msg);
-	void       OnSOCache(const CMsgSOCacheSubscribed &cache);
+	void       OnSOCache(const CMsgSOCacheSubscribed &cache, bool pushBackCacheTime = false);
 	ItemCache *FindCache(CSteamID owner, bool createIfNotFound = false);
 	STEAM_GAMESERVER_CALLBACK(CGCClient, OnGCMessageAvailable, GCMessageAvailable_t);
 	STEAM_GAMESERVER_CALLBACK(CGCClient, OnSteamServersDisconnected, SteamServersDisconnected_t);

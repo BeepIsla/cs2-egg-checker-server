@@ -395,7 +395,7 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 			if (client)
 				client->SetHaveSOCache();
 
-			OnSOCache(msg.Body());
+			OnSOCache(msg.Body(), true);
 			break;
 		}
 		case k_ESOMsg_CacheSubscriptionCheck:
@@ -413,7 +413,9 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 					client->SetHaveSOCache();
 
 				std::println("Found cached data for {}", steamID);
-				GCClient().OnSOCache(cache->m_cache);
+
+				// The cache did not change, so update the cache duration
+				GCClient().OnSOCache(cache->m_cache, true);
 			}
 			else
 			{
@@ -440,7 +442,7 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 	}
 }
 
-void CGCClient::OnSOCache(const CMsgSOCacheSubscribed &cache)
+void CGCClient::OnSOCache(const CMsgSOCacheSubscribed &cache, bool pushBackCacheTime)
 {
 	CSteamID steamID;
 	steamID.SetFromUint64(cache.owner_soid().id());
@@ -451,6 +453,9 @@ void CGCClient::OnSOCache(const CMsgSOCacheSubscribed &cache)
 	// We pass a reference of ItemCache into here sometimes, so only CopyFrom if its different
 	if (&memoryCache->m_cache != &cache)
 		memoryCache->m_cache.CopyFrom(cache);
+
+	if (pushBackCacheTime)
+		memoryCache->UpdateCachedTime();
 
 	CClient *client = Server().FindClient(steamID);
 	if (!client)
