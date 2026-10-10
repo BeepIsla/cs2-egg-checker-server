@@ -473,9 +473,7 @@ void CGCClient::OnSOCache(const CMsgSOCacheSubscribed &cache)
 	if (!foundAnyEgg)
 		client->PrintToConsole("Failed to find pet");
 
-	auto delta = std::chrono::duration_cast<std::chrono::seconds>(memoryCache->m_timecacheexpiresat - clock::now());
-	client->PrintToConsole(std::format("\nNote: This data is cached for 30 minutes ({} seconds left)", delta.count()));
-
+	client->PrintToConsole(std::format("\nOpen Source: https://github.com/BeepIsla/cs2-egg-checker-server"));
 	client->PrintToConsole("\n\n\n\n\n\n\n\n\n\n");
 	client->Track(foundAnyEgg ? CDB::EUserResult::Success : CDB::EUserResult::NoEgg, nullptr, &cache);
 	client->Close(NETWORK_DISCONNECT_UNUSUAL, true);
