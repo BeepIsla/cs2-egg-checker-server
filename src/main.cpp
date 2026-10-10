@@ -26,6 +26,26 @@ void SignalHandler(int signal)
 		s_bQuit = true;
 }
 
+static void OnSteamNetworkingSocketsDebugOutput(ESteamNetworkingSocketsDebugOutputType nType, const char *pszMsg)
+{
+	static constexpr const char *DebugOutputLevels[] = {
+	    "None",
+	    "Bug",
+	    "Error",
+	    "Important",
+	    "Warning",
+	    "Msg",
+	    "Verbose",
+	    "Debug",
+	    "Everything",
+	};
+	static constexpr size_t DebugOutputLevelSize = sizeof(DebugOutputLevels) / sizeof(*DebugOutputLevels);
+	if (nType < 0 || nType >= DebugOutputLevelSize)
+		std::println("[SteamNetworkingSockets :: {}] {}", std::to_underlying(nType), pszMsg);
+	else
+		std::println("[SteamNetworkingSockets :: {}] {}", DebugOutputLevels[nType], pszMsg);
+}
+
 int main(int argc, char **argv)
 {
 	struct Options
@@ -68,6 +88,12 @@ int main(int argc, char **argv)
 	CAutoRelease steamShutdown([]() {
 		SteamGameServer_Shutdown();
 	});
+
+#ifdef DEBUG
+	SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Verbose, OnSteamNetworkingSocketsDebugOutput);
+#else
+	SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Msg, OnSteamNetworkingSocketsDebugOutput);
+#endif
 
 	SteamNetworkingIPAddr addr;
 	addr.Clear();

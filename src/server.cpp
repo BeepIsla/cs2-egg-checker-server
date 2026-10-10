@@ -8,26 +8,6 @@
 #include <steam/steamnetworkingtypes.h>
 #include <utility>
 
-static void OnSteamNetworkingSocketsDebugOutput(ESteamNetworkingSocketsDebugOutputType nType, const char *pszMsg)
-{
-	static constexpr const char *DebugOutputLevels[] = {
-	    "None",
-	    "Bug",
-	    "Error",
-	    "Important",
-	    "Warning",
-	    "Msg",
-	    "Verbose",
-	    "Debug",
-	    "Everything",
-	};
-	static constexpr size_t DebugOutputLevelSize = sizeof(DebugOutputLevels) / sizeof(*DebugOutputLevels);
-	if (nType < 0 || nType >= DebugOutputLevelSize)
-		std::println("[SteamNetworkingSockets :: {}] {}", std::to_underlying(nType), pszMsg);
-	else
-		std::println("[SteamNetworkingSockets :: {}] {}", DebugOutputLevels[nType], pszMsg);
-}
-
 CServer::CServer()
     : m_socket(k_HSteamListenSocket_Invalid),
       m_pollGroup(k_HSteamNetPollGroup_Invalid)
@@ -51,11 +31,6 @@ void CServer::Init(HSteamListenSocket socket, HSteamNetPollGroup pollGroup)
 
 	// The client cannot connect to persistent servers via P2P/SteamID so always use anonymous
 	SteamGameServer()->LogOnAnonymous();
-#ifdef DEBUG
-	SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Everything, OnSteamNetworkingSocketsDebugOutput);
-#else
-	SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Msg, OnSteamNetworkingSocketsDebugOutput);
-#endif
 }
 
 void CServer::RunFrame()
