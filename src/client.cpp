@@ -72,6 +72,21 @@ void CClient::RunFrame()
 		Track(CDB::EUserResult::Timeout, "GC inventory timeout");
 		Close(NETWORK_DISCONNECT_TIMEDOUT, true);
 	}
+	else if (!m_closed && !m_havesocache && GetConnectTime().count() >= 15)
+	{
+		// After 15 seconds of no cache try to request it from the GC anyways
+		m_havesocache = true;
+
+		std::println("No cache for {} after 15 seconds, requesting SOCache...", m_steamID);
+
+		CGCProtoMsg<CMsgSOCacheSubscriptionRefresh> msg(k_ESOMsg_CacheSubscriptionRefresh);
+		if (CMsgSOIDOwner *owner = msg.Body().mutable_owner_soid())
+		{
+			owner->set_type(1);
+			owner->set_id(m_steamID.ConvertToUint64());
+		}
+		GCClient().Send(msg);
+	}
 }
 
 void CClient::OnPacket(const void *data, size_t size)
@@ -138,6 +153,7 @@ void CClient::OnPacket(const void *data, size_t size)
 
 				// If we already have this user cached simply return what we have and don't bother doing the auth stuff
 				// Once we do authentication the GC will send us the players inventory and maybe that is the reason why things are breaking, too many GC fetches?
+				// Yes that means technically you can see the pet data of another player by spoofing their SteamID, oh no! Doesn't matter.
 				CGCClient::ItemCache *cache = GCClient().FindCache(m_steamID);
 				if (!cache || cache->BExpired())
 				{
@@ -165,7 +181,10 @@ void CClient::OnPacket(const void *data, size_t size)
 
 				// Send the response first, so the client is in the correct state when we try to print to their console
 				if (cache)
+				{
+					m_havesocache = true;
 					GCClient().OnSOCache(cache->m_cache);
+				}
 				break;
 			}
 			default:

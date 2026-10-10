@@ -20,6 +20,7 @@ private:
 	clock::time_point   m_lastrecv      = clock::now();
 	bool                m_closed        = false;
 	bool                m_tracked       = false;
+	bool                m_havesocache   = false;
 
 public:
 	CClient(HSteamNetConnection conn, CSteamID steamID)
@@ -66,6 +67,11 @@ public:
 	inline bool IsClosed() const
 	{
 		return m_closed;
+	}
+
+	inline void SetHaveSOCache()
+	{
+		m_havesocache = true;
 	}
 
 	inline std::chrono::seconds GetConnectTime() const

@@ -387,6 +387,14 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 		case k_ESOMsg_CacheSubscribed:
 		{
 			CGCProtoMsg<CMsgSOCacheSubscribed> msg(data, size);
+
+			CSteamID steamID;
+			steamID.SetFromUint64(msg.Body().owner_soid().id());
+
+			CClient *client = Server().FindClient(steamID);
+			if (client)
+				client->SetHaveSOCache();
+
 			OnSOCache(msg.Body());
 			break;
 		}
@@ -400,6 +408,10 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 			ItemCache *cache = FindCache(steamID, false);
 			if (cache && cache->m_cache.version() == msg.Body().version())
 			{
+				CClient *client = Server().FindClient(steamID);
+				if (client)
+					client->SetHaveSOCache();
+
 				std::println("Found cached data for {}", steamID);
 				GCClient().OnSOCache(cache->m_cache);
 			}
