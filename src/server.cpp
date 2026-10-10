@@ -78,6 +78,20 @@ void CServer::RunFrame()
 
 	for (std::unique_ptr<CClient> &client : m_clients)
 		client->RunFrame();
+
+	// We randomly stop receiving SOCaches from the GC, no idea why.
+	// I've seen it happen after only 25 minutes!
+	// Lets try relogging every hour, maybe that will help.
+	// This doesn't actually change our SteamID, maybe we have to fully shutdown the API?
+	static constexpr size_t RECONNECT_AFTER_N_CLIENTS = 100;
+	if (SteamGameServer()->BLoggedOn() && m_clientcount > 0 && m_clientcount != m_lastReconnectClientCount && m_clients.empty() && (m_clientcount % RECONNECT_AFTER_N_CLIENTS) == 0)
+	{
+		m_lastReconnectClientCount = m_clientcount;
+
+		std::println("Had {} clients connect, relogging...", m_clientcount);
+		SteamGameServer()->LogOff();
+		SteamGameServer()->LogOnAnonymous();
+	}
 }
 
 CClient *CServer::FindClient(CSteamID steamID)
@@ -167,6 +181,7 @@ void CServer::OnSteamNetConnectionStatusChangedCallback(SteamNetConnectionStatus
 				break;
 			}
 
+			m_clientcount++;
 			m_clients.push_back(std::make_unique<CClient>(pParam->m_hConn, steamID));
 			break;
 		}

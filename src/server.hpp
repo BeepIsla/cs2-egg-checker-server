@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <memory>
 #include <steam/steam_gameserver.h>
 #include <vector>
@@ -10,6 +11,8 @@ private:
 	HSteamListenSocket                    m_socket;
 	HSteamNetPollGroup                    m_pollGroup;
 	std::vector<std::unique_ptr<CClient>> m_clients;
+	size_t                                m_clientcount              = 0;
+	size_t                                m_lastReconnectClientCount = 0;
 
 public:
 	CServer();
