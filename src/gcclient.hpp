@@ -16,6 +16,8 @@ class CGCClient
 public:
 	struct ItemCache
 	{
+		static inline std::chrono::minutes CACHE_DURATION = std::chrono::minutes(60);
+
 		CSteamID              m_owner;
 		clock::time_point     m_timecached;
 		clock::time_point     m_timecacheexpiresat;
@@ -24,14 +26,19 @@ public:
 		ItemCache(CSteamID owner)
 		    : m_owner(owner),
 		      m_timecached(clock::now()),
-		      m_timecacheexpiresat(m_timecached + std::chrono::minutes(30))
+		      m_timecacheexpiresat(m_timecached + CACHE_DURATION)
 		{
 		}
 
-		bool BExpired() const
+		inline bool BExpired() const
 		{
-			auto delta = std::chrono::duration_cast<std::chrono::seconds>(clock::now() - m_timecached);
-			return delta.count() >= 30 * 60; // We cache for 30 minutes
+			auto delta = std::chrono::duration_cast<std::chrono::minutes>(clock::now() - m_timecached);
+			return delta >= CACHE_DURATION;
+		}
+
+		inline std::chrono::minutes GetCacheTimeLeft() const
+		{
+			return std::chrono::duration_cast<std::chrono::minutes>(m_timecacheexpiresat - clock::now());
 		}
 	};
 

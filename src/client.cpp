@@ -19,6 +19,7 @@ void CClient::MarkAuthenticated()
 	m_authenticated = true;
 
 	// The GC will now send us CacheSubscriptionCheck
+	// ^ Seems like Valve broke this a few days ago? We now just get CacheSubscribed immediately with all the data...
 }
 
 void CClient::Track(CDB::EUserResult result, const char *extra, const CMsgSOCacheSubscribed *socache)
@@ -135,13 +136,21 @@ void CClient::OnPacket(const void *data, size_t size)
 				steamID.SetFromUint64(steamID64);
 				m_steamID = steamID;
 
-				EBeginAuthSessionResult result = SteamGameServer()->BeginAuthSession(data, size, steamID);
-				if (result != k_EBeginAuthSessionResultOK)
+				// If we already have this user cached simply return what we have and don't bother doing the auth stuff
+				// Once we do authentication the GC will send us the players inventory and maybe that is the reason why things are breaking, too many GC fetches?
+				CGCClient::ItemCache *cache = GCClient().FindCache(m_steamID);
+				if (!cache || cache->BExpired())
 				{
-					std::string extra = std::to_string(std::to_underlying(result));
-					Track(CDB::EUserResult::BadTicket, extra.c_str());
-					Close(NETWORK_DISCONNECT_STEAM_AUTHINVALID);
-					break;
+					cache = nullptr;
+
+					EBeginAuthSessionResult result = SteamGameServer()->BeginAuthSession(data, size, steamID);
+					if (result != k_EBeginAuthSessionResultOK)
+					{
+						std::string extra = std::to_string(std::to_underlying(result));
+						Track(CDB::EUserResult::BadTicket, extra.c_str());
+						Close(NETWORK_DISCONNECT_STEAM_AUTHINVALID);
+						break;
+					}
 				}
 
 				// Write response
@@ -152,7 +161,11 @@ void CClient::OnPacket(const void *data, size_t size)
 				resp.Write<uint32_t>(CONNECTIONLESS_HEADER);
 				resp.Write<uint8_t>(S2C_CONNECTION);
 				resp.WriteProtobuf(respProto);
-				Send(resp, k_nSteamNetworkingSend_Unreliable);
+				Send(resp, k_nSteamNetworkingSend_Reliable);
+
+				// Send the response first, so the client is in the correct state when we try to print to their console
+				if (cache)
+					GCClient().OnSOCache(cache->m_cache);
 				break;
 			}
 			default:
