@@ -18,8 +18,7 @@ void CClient::MarkAuthenticated()
 		return;
 	m_authenticated = true;
 
-	// The GC will now send us CacheSubscriptionCheck
-	// ^ Seems like Valve broke this a few days ago? We now just get CacheSubscribed immediately with all the data...
+	// The GC will now send us CacheSubscriptionCheck, incase it doesn't RunFrame will request it
 }
 
 void CClient::Track(CDB::EUserResult result, const char *extra, const CMsgSOCacheSubscribed *socache)
@@ -72,7 +71,7 @@ void CClient::RunFrame()
 		Track(CDB::EUserResult::Timeout, "GC inventory timeout");
 		Close(NETWORK_DISCONNECT_TIMEDOUT, true);
 	}
-	else if (!m_closed && !m_havesocache && GetConnectTime().count() >= 15)
+	else if (!m_closed && m_authenticated && !m_havesocache && GetConnectTime().count() >= 15)
 	{
 		// After 15 seconds of no cache try to request it from the GC anyways
 		m_havesocache = true;
