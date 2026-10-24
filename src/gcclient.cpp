@@ -202,9 +202,17 @@ void CGCClient::OnPet(CClient *client, CSOEconItem &pet)
 	// - 303=pet food expiration date
 	// - 304=pet next upgrade date
 	// - 313=pet seed
+	// - 328=custom name attr 2
+	// - 329=custom name attr 3
 
 	std::vector<std::string> lines;
-	if (auto name = ItemAttribute<111, std::string>::Get(pet))
+
+	// Each stage lets you rename your pet, print the most recent one
+	if (auto name = ItemAttribute<329, std::string>::Get(pet))
+		lines.push_back(std::format("[ {} : {} ]", pet.id(), name.value()));
+	else if (auto name = ItemAttribute<328, std::string>::Get(pet))
+		lines.push_back(std::format("[ {} : {} ]", pet.id(), name.value()));
+	else if (auto name = ItemAttribute<111, std::string>::Get(pet))
 		lines.push_back(std::format("[ {} : {} ]", pet.id(), name.value()));
 	else
 		lines.push_back(std::format("[ {} ]", pet.id()));
