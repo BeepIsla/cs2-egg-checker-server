@@ -31,22 +31,6 @@ add_executable(cs2-egg-checker-server
 	src/gcclient.cpp
 	src/db.cpp
 
-	# .\submodules\s2sdk\devtools\bin\protoc.exe ^
-	# 	--proto_path=./submodules/protobufs/csgo ^
-	# 	--cpp_out=./src/protobufs ^
-	# 	valveextensions.proto ^
-	# 	source2_steam_stats.proto ^
-	# 	connectionless_netmessages.proto ^
-	# 	steammessages.proto ^
-	# 	netmessages.proto ^
-	# 	usermessages.proto ^
-	# 	network_connection.proto ^
-	# 	networkbasetypes.proto ^
-	# 	base_gcmessages.proto ^
-	# 	engine_gcmessages.proto ^
-	# 	gcsystemmsgs.proto ^
-	# 	gcsdk_gcmessages.proto ^
-	# 	cstrike15_gcmessages.proto
 	src/protobufs/valveextensions.pb.cc
 	src/protobufs/source2_steam_stats.pb.cc
 	src/protobufs/connectionless_netmessages.pb.cc
@@ -106,16 +90,3 @@ else()
 	)
 	configure_file(${CMAKE_SOURCE_DIR}/submodules/steamworks/redistributable_bin/linux64/libsteam_api.so ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libsteam_api.so COPYONLY)
 endif()
-
-# Generate protobufs
-set(PROTO_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
-file(MAKE_DIRECTORY ${PROTO_BINARY_DIR})
-
-target_include_directories(cs2-egg-checker-server PUBLIC "$<BUILD_INTERFACE:${PROTO_BINARY_DIR}>")
-
-#include(${CMAKE_SOURCE_DIR}/submodules/protobuf/cmake/protobuf-generate.cmake)
-#protobuf_generate(
-#	TARGET cs2-egg-checker-server
-#	IMPORT_DIRS "${CMAKE_SOURCE_DIR}/submodules/protobufs/csgo"
-#	PROTOC_OUT_DIR "${PROTO_BINARY_DIR}"
-#)
