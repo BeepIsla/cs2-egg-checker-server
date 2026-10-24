@@ -16,6 +16,9 @@
 #include <string>
 #include <utility>
 
+// Message ID 2522 from econ_gcmessages.proto
+inline constexpr uint32_t k_EMsgGCServerVersionUpdated = 2522;
+
 template<int id, typename T>
 struct ItemAttribute
 {
@@ -192,6 +195,8 @@ void CGCClient::OnPet(CClient *client, CSOEconItem &pet)
 {
 	if (!client)
 		return;
+
+	std::println("[GC] Found pet ID {} for client {}, printing details...", pet.id(), client->GetSteamID());
 
 	// Known attributes on a pet:
 	// - 111=custom name attr
@@ -374,6 +379,16 @@ void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, s
 			m_connected = true;
 			break;
 		}
+		case k_EMsgGCServerVersionUpdated:
+		{
+			CGCProtoMsg<CMsgGCServerVersionUpdated> msg(data, size);
+			std::println("================================================================================");
+			std::println("[UPDATE DETECTED] GameCoordinator broadcasted ServerVersionUpdated! (new version={})", msg.Body().server_version());
+			std::println("[UPDATE DETECTED] Server is out of date. Initiating server restart and protobuf rebuild (exit code 42)...");
+			std::println("================================================================================");
+			std::exit(42);
+			break;
+		}
 		case k_EMsgGCServerConnectionStatus:
 		case k_EMsgGCClientConnectionStatus:
 		{
@@ -447,6 +462,8 @@ void CGCClient::OnSOCache(const CMsgSOCacheSubscribed &cache, bool pushBackCache
 	CSteamID steamID;
 	steamID.SetFromUint64(cache.owner_soid().id());
 
+	std::println("[GC] OnSOCache received for {} (objects count: {})", steamID, cache.objects_size());
+
 	ItemCache *memoryCache = FindCache(steamID, true);
 	DEBUG_ASSERT(memoryCache);
 	// Don't update m_timecached, we count from the time we first got the data, not from the last time it was accessed
@@ -494,7 +511,7 @@ void CGCClient::OnSOCache(const CMsgSOCacheSubscribed &cache, bool pushBackCache
 	client->PrintToConsole(std::format("Open Source: https://github.com/BeepIsla/cs2-egg-checker-server"));
 	client->PrintToConsole("\n\n\n\n\n\n\n\n\n\n");
 	client->Track(foundAnyEgg ? CDB::EUserResult::Success : CDB::EUserResult::NoEgg, nullptr, &cache);
-	client->Close(NETWORK_DISCONNECT_UNUSUAL, true);
+	client->ScheduleClose(std::chrono::milliseconds(2500), NETWORK_DISCONNECT_DISCONNECT_BY_SERVER);
 }
 
 CGCClient::ItemCache *CGCClient::FindCache(CSteamID owner, bool createIfNotFound)

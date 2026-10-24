@@ -21,6 +21,8 @@ private:
 	bool                m_closed        = false;
 	bool                m_tracked       = false;
 	bool                m_havesocache   = false;
+	std::optional<clock::time_point> m_disconnectTime;
+	ENetworkDisconnectionReason      m_disconnectReason = NETWORK_DISCONNECT_DISCONNECT_BY_SERVER;
 
 public:
 	CClient(HSteamNetConnection conn, CSteamID steamID)
@@ -82,6 +84,7 @@ public:
 	void Track(CDB::EUserResult result, const char *extra = nullptr, const CMsgSOCacheSubscribed *socache = nullptr);
 	void MarkAuthenticated();
 	void Close(ENetworkDisconnectionReason reason, bool allowLinger = false);
+	void ScheduleClose(std::chrono::milliseconds delay, ENetworkDisconnectionReason reason = NETWORK_DISCONNECT_DISCONNECT_BY_SERVER);
 	bool BTimedOut() const;
 	void RunFrame();
 	void OnPacket(const void *data, size_t size);

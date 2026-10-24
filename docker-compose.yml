@@ -1,0 +1,9 @@
+services:
+  cs2-egg-checker:
+    build: .
+    image: cs2-egg-checker-server:latest
+    container_name: cs2-egg-checker-server
+    restart: unless-stopped
+    ports:
+      - "27015:27015/udp"
+    command: ["-listen", "0.0.0.0:27015"]

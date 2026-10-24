@@ -16,7 +16,7 @@ private:
 
 public:
 	CServer();
-	void     Init(HSteamListenSocket socket, HSteamNetPollGroup pollGroup);
+	void     Init(HSteamListenSocket socket, HSteamNetPollGroup pollGroup, const char *token = nullptr);
 	void     Close();
 	void     RunFrame();
 	// Don't keep this around for too long! The pointer may change or get invalidated next frame.
@@ -27,6 +27,7 @@ private:
 	STEAM_GAMESERVER_CALLBACK(CServer, OnSteamServersDisconnected, SteamServersDisconnected_t);
 	STEAM_GAMESERVER_CALLBACK(CServer, OnSteamServerConnectFailure, SteamServerConnectFailure_t);
 	STEAM_GAMESERVER_CALLBACK(CServer, OnSteamNetConnectionStatusChangedCallback, SteamNetConnectionStatusChangedCallback_t);
+	STEAM_GAMESERVER_CALLBACK(CServer, OnSteamNetAuthenticationStatus, SteamNetAuthenticationStatus_t);
 	STEAM_GAMESERVER_CALLBACK(CServer, OnValidateAuthTicketResponse, ValidateAuthTicketResponse_t);
 };
 

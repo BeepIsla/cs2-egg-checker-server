@@ -8,7 +8,7 @@
 #include <steam/steamnetworkingtypes.h>
 #include <utility>
 
-static void OnSteamNetworkingSocketsDebugOutput(ESteamNetworkingSocketsDebugOutputType nType, const char *pszMsg)
+void OnSteamNetworkingSocketsDebugOutput(ESteamNetworkingSocketsDebugOutputType nType, const char *pszMsg)
 {
 	static constexpr const char *DebugOutputLevels[] = {
 	    "None",
@@ -44,22 +44,33 @@ void CServer::Close()
 	SteamGameServer()->LogOff();
 }
 
-void CServer::Init(HSteamListenSocket socket, HSteamNetPollGroup pollGroup)
+void CServer::Init(HSteamListenSocket socket, HSteamNetPollGroup pollGroup, const char *token)
 {
 	m_socket    = socket;
 	m_pollGroup = pollGroup;
 
-	// The client cannot connect to persistent servers via P2P/SteamID so always use anonymous
-	SteamGameServer()->LogOnAnonymous();
-#ifdef DEBUG
+	if (token && token[0] != '\0')
+	{
+		std::println("Logging on to Steam with GSLT token...");
+		SteamGameServer()->LogOn(token);
+	}
+	else
+	{
+		std::println("Logging on to Steam anonymously...");
+		SteamGameServer()->LogOnAnonymous();
+	}
+
 	SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Everything, OnSteamNetworkingSocketsDebugOutput);
-#else
-	SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Msg, OnSteamNetworkingSocketsDebugOutput);
-#endif
+	SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_LogLevel_P2PRendezvous, k_ESteamNetworkingSocketsDebugOutputType_Everything);
+	SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_LogLevel_PacketDecode, k_ESteamNetworkingSocketsDebugOutputType_Everything);
+	SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_LogLevel_Message, k_ESteamNetworkingSocketsDebugOutputType_Everything);
+	SteamNetworkingUtils()->InitRelayNetworkAccess();
 }
 
 void CServer::RunFrame()
 {
+	SteamGameServerNetworkingSockets()->RunCallbacks();
+
 	std::erase_if(m_clients, [](const std::unique_ptr<CClient> &client) {
 		return client->IsClosed();
 	});
@@ -72,7 +83,13 @@ void CServer::RunFrame()
 			return client->GetConnectionHandle() == conn;
 		});
 		if (it != m_clients.end())
+		{
 			(*it)->OnPacket(msgs[i]->m_pData, msgs[i]->m_cbSize);
+		}
+		else
+		{
+			std::println("[Server] Received {} bytes for unknown connection handle {}", msgs[i]->m_cbSize, msgs[i]->m_conn);
+		}
 		msgs[i]->Release();
 	}
 
@@ -119,8 +136,20 @@ void CServer::OnSteamServerConnectFailure(SteamServerConnectFailure_t *pParam)
 	std::println("Steam server connect failure: {}{}", std::to_underlying(pParam->m_eResult), pParam->m_bStillRetrying ? " (Retrying)" : "");
 }
 
+void CServer::OnSteamNetAuthenticationStatus(SteamNetAuthenticationStatus_t *pParam)
+{
+	std::println("[AuthStatus] Status: {}, Debug: {}", std::to_underlying(pParam->m_eAvail), pParam->m_debugMsg);
+}
+
 void CServer::OnSteamNetConnectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t *pParam)
 {
+	std::println("[ConnectionStatus] Handle={}, State: {} -> {}, Reason={}: {}",
+	    pParam->m_hConn,
+	    std::to_underlying(pParam->m_eOldState),
+	    std::to_underlying(pParam->m_info.m_eState),
+	    pParam->m_info.m_eEndReason,
+	    pParam->m_info.m_szEndDebug);
+
 	switch (pParam->m_info.m_eState)
 	{
 		case k_ESteamNetworkingConnectionState_None:

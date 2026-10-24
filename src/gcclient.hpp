@@ -85,6 +85,16 @@ public:
 		return m_connected;
 	}
 
+	inline uint32_t GetGCVersion() const
+	{
+		return m_versioncache.m_gcversion;
+	}
+
+	inline uint32_t GetGameVersion() const
+	{
+		return m_versioncache.m_gameversion;
+	}
+
 private:
 	bool BHelloTimedOut() const;
 	bool BShouldSendReservationUpdate() const;

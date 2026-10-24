@@ -38,6 +38,9 @@ void CClient::Close(ENetworkDisconnectionReason reason, bool allowLinger)
 		return;
 	m_closed = true;
 
+	std::println("[Client {}] Closing connection: reason={} ({}), AllowLinger={}",
+	    m_steamID, std::to_underlying(reason), std::to_string(std::to_underlying(reason)), allowLinger ? "TRUE" : "FALSE");
+
 	if (!m_tracked && m_steamID.IsValid() && m_steamID.ConvertToUint64() != 0)
 	{
 		m_tracked         = true;
@@ -58,8 +61,20 @@ bool CClient::BTimedOut() const
 	return delta.count() > 15;
 }
 
+void CClient::ScheduleClose(std::chrono::milliseconds delay, ENetworkDisconnectionReason reason)
+{
+	m_disconnectTime   = clock::now() + delay;
+	m_disconnectReason = reason;
+}
+
 void CClient::RunFrame()
 {
+	if (!m_closed && m_disconnectTime && clock::now() >= *m_disconnectTime)
+	{
+		Close(m_disconnectReason, true);
+		return;
+	}
+
 	if (!m_closed && BTimedOut())
 	{
 		Track(CDB::EUserResult::Timeout, "Inactivity");
@@ -95,8 +110,7 @@ void CClient::OnPacket(const void *data, size_t size)
 		return;
 	m_lastrecv = clock::now();
 
-#ifdef DEBUG
-	std::println("[ {} - {} bytes ]", m_steamID, size);
+	std::println("[Client {}] Packet received: {} bytes", m_steamID, size);
 	for (size_t i = 0; i < size; i++)
 	{
 		if (i > 0 && (i % 16) == 0)
@@ -104,7 +118,6 @@ void CClient::OnPacket(const void *data, size_t size)
 		std::print("{:02x} ", static_cast<int>(reinterpret_cast<const uint8_t *>(data)[i]) & 0xff);
 	}
 	std::print("\n");
-#endif
 
 	if (size >= sizeof(uint32_t) && *reinterpret_cast<const uint32_t *>(data) == CONNECTIONLESS_HEADER)
 	{
@@ -114,6 +127,7 @@ void CClient::OnPacket(const void *data, size_t size)
 		{
 			case A2S_GETCHALLENGE:
 			{
+				std::println("[Client {}] -> A2S_GETCHALLENGE received, replying with S2C_CHALLENGE", m_steamID);
 				CBuffer resp(64);
 				resp.Write<uint32_t>(CONNECTIONLESS_HEADER);                           // Header
 				resp.Write<uint8>(S2C_CHALLENGE);                                      // Type
@@ -132,6 +146,20 @@ void CClient::OnPacket(const void *data, size_t size)
 				buf.ReadProtobuf(msg);
 
 				const std::string &ticket = msg.auth_steam();
+				std::println("[Client {}] -> C2S_CONNECT received (auth ticket {} bytes, host_version {})", m_steamID, ticket.size(), msg.host_version());
+
+				// Check if client is on a newer game version than what server expects
+				uint32_t currentServerVersion = GCClient().GetGCVersion();
+				if (currentServerVersion > 0 && msg.host_version() > currentServerVersion)
+				{
+					std::println("================================================================================");
+					std::println("[UPDATE DETECTED] Client {} connected with newer host_version {} (server expected {})",
+					    m_steamID, msg.host_version(), currentServerVersion);
+					std::println("[UPDATE DETECTED] A new CS2 update was released. Initiating server restart and protobuf rebuild (exit code 42)...");
+					std::println("================================================================================");
+					std::exit(42);
+				}
+
 				if (ticket.size() <= sizeof(uint64_t))
 				{
 					Track(CDB::EUserResult::BadTicket, "Malformed ticket");
@@ -224,16 +252,15 @@ void CClient::SendNetMsg(uint32_t type, const google::protobuf::Message &msg, bo
 
 void CClient::PrintToConsole(const std::string &text)
 {
-	// CSVCMsg_Print collapses multiple newline characters into one, so we have to add zws inbetween
-	// Instead just use HUD_PRINTCONSOLE, that works fine
-#if 0
-	CSVCMsg_Print msg;
-	msg.set_text(text);
-	SendNetMsg(svc_Print, msg, true);
-#else
-	CUserMessageTextMsg msg;
-	msg.set_dest(2); // HUD_PRINTCONSOLE
-	msg.add_param(text);
-	SendNetMsg(UM_TextMsg, msg, true);
-#endif
+	std::string formatted;
+	for (size_t i = 0; i < text.size(); i++)
+	{
+		formatted += text[i];
+		if (text[i] == '\n' && i + 1 < text.size() && text[i + 1] == '\n')
+			formatted += " \u200B";
+	}
+
+	CSVCMsg_Print printMsg;
+	printMsg.set_text(formatted + "\n");
+	SendNetMsg(svc_Print, printMsg, true);
 }

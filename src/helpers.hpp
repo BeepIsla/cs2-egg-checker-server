@@ -184,3 +184,5 @@ inline std::optional<std::string> FormatTimeLeftDuration(std::int64_t timestamp_
 
 	return result;
 }
+
+void OnSteamNetworkingSocketsDebugOutput(ESteamNetworkingSocketsDebugOutputType nType, const char *pszMsg);

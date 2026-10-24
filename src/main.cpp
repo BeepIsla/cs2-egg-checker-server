@@ -28,6 +28,9 @@ void SignalHandler(int signal)
 
 int main(int argc, char **argv)
 {
+	std::setvbuf(stdout, nullptr, _IONBF, 0);
+	std::setvbuf(stderr, nullptr, _IONBF, 0);
+
 	struct Options
 	{
 		// "-dbpath"
@@ -35,6 +38,9 @@ int main(int argc, char **argv)
 
 		// "-listen"
 		const char *listenaddress = nullptr;
+
+		// "-token" (GSLT token, optional)
+		const char *token = nullptr;
 	} opts;
 	for (int i = 1; i < argc; i++)
 	{
@@ -48,7 +54,19 @@ int main(int argc, char **argv)
 			opts.listenaddress = argv[i + 1];
 			i += 1;
 		}
+		else if (std::strcmp(argv[i], "-token") == 0 && i + 1 < argc)
+		{
+			opts.token = argv[i + 1];
+			i += 1;
+		}
+		else if (std::strcmp(argv[i], "-p2p") == 0)
+		{
+			opts.listenaddress = "";
+		}
 	}
+
+	if (!opts.listenaddress)
+		opts.listenaddress = "0.0.0.0:27015";
 
 // We first do this to initialise the server
 #ifdef __linux__
@@ -69,9 +87,14 @@ int main(int argc, char **argv)
 		SteamGameServer_Shutdown();
 	});
 
+	if (SteamNetworkingUtils())
+	{
+		SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Everything, OnSteamNetworkingSocketsDebugOutput);
+	}
+
 	SteamNetworkingIPAddr addr;
 	addr.Clear();
-	if (opts.listenaddress && (!addr.ParseString(opts.listenaddress) || addr.m_port == 0))
+	if (opts.listenaddress && opts.listenaddress[0] != '\0' && (!addr.ParseString(opts.listenaddress) || addr.m_port == 0))
 	{
 		std::println("Failed to parse given address '{}'", opts.listenaddress);
 		return 1;
@@ -113,7 +136,7 @@ int main(int argc, char **argv)
 		DB().Close();
 	});
 
-	Server().Init(listensocket, pollgroup);
+	Server().Init(listensocket, pollgroup, opts.token);
 	std::signal(SIGINT, SignalHandler);
 	std::signal(SIGTERM, SignalHandler);
 
