@@ -18,12 +18,14 @@ Because I don't want to run a full CS2 server (Over 70 GB) and bother with const
 
 ## Usage
 
-`server.exe <options>`
+`cs2-egg-checker-server.exe <options>`
 
 Options:
 
-- `-dbpath <file>`: Where to write our analytics, sqlite3 file, no analytics if not provided
-- `-listen <address>`: What IP to listen on, P2P if not provided
+- `-dbpath <file>`: Where to write our analytics, sqlite3 file, no analytics if not provided (Environment variable: `DB_PATH`)
+- `-listen <address>`: What IP to listen on, P2P if not provided (Environment variable: `LISTEN_ADDRESS`)
+
+Command-line arguments take priority over environment variables. Setting an argument to an empty string cancels out the environment variable (e.g. running with `-dbpath ""` overrides `DB_PATH` to disable analytics).
 
 ## Building
 
@@ -31,3 +33,12 @@ Requirements: CMake and a C++ compiler with C++23 support
 
 1. `cmake --preset release`
 2. `cmake --build --preset release`
+
+### Docker
+
+By default Docker will listen on port `27015`, use `LISTEN_ADDRESS` environment variable to override. You can set `LISTEN_ADDRESS` to an empty string if you want P2P but note that P2P does not work with persistent SteamIDs, so you have to get the server SteamID from the logs every time the container restarts.
+
+1. `docker buildx build -t cs2-egg-checker-server:latest .`
+2. `docker run --name cs2-egg-checker-server -p 27015:27015/udp cs2-egg-checker-server:latest`
+
+If you want to log analytics add `-v $(pwd)/data:/data` and `-e DB_PATH=/data/analytics.sqlite`:

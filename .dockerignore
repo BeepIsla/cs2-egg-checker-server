@@ -1,0 +1,12 @@
+.git
+.github
+
+.vs*
+build
+private
+
+submodules/steamworks/tools
+submodules/steamworks/glmgr
+submodules/steamworks/steamworksexample
+submodules/s2sdk/devtools
+submodules/s2sdk/lib/public

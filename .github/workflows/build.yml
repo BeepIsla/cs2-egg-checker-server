@@ -78,9 +78,25 @@ jobs:
                   path: dist/
                   if-no-files-found: error
 
+    docker:
+        name: Build Docker
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository recursively
+              uses: actions/checkout@v7
+              with:
+                  submodules: recursive
+                  fetch-depth: 0
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v4
+
+            - name: Test Docker build
+              run: docker buildx build -t cs2-egg-checker-server:latest .
+
     release:
         name: Create Release
-        needs: build
+        needs: [build, docker]
         if: github.ref_type == 'tag'
         runs-on: ubuntu-latest
         permissions:

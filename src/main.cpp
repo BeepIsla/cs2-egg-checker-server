@@ -7,10 +7,13 @@
 #include <base_gcmessages.pb.h>
 #include <connectionless_netmessages.pb.h>
 #include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <cstrike15_gcmessages.pb.h>
 #include <gcsdk_gcmessages.pb.h>
 #include <gcsystemmsgs.pb.h>
 #include <network_connection.pb.h>
+#include <optional>
 #include <print>
 #include <steam/isteamgamecoordinator.h>
 #include <steam/steam_gameserver.h>
@@ -46,28 +49,41 @@ static void OnSteamNetworkingSocketsDebugOutput(ESteamNetworkingSocketsDebugOutp
 		std::println("[SteamNetworkingSockets :: {}] {}", DebugOutputLevels[nType], pszMsg);
 }
 
+const char *GetEnvNonEmpty(const char *name)
+{
+	const char *val = std::getenv(name);
+	return (val && val[0] != '\0') ? val : nullptr;
+}
+
+// Returns std::nullopt if not found, otherwise the value set to, an empty string will return nullopt for environment variable overrides
+std::optional<const char *> GetArgNonEmpty(const char *arg, int &index, int argc, char **argv)
+{
+	if (std::strcmp(arg, argv[index]) == 0 && index + 1 < argc)
+	{
+		const char *value = argv[++index];
+		return value[0] != '\0' ? value : nullptr;
+	}
+	return std::nullopt;
+}
+
 int main(int argc, char **argv)
 {
+	std::setvbuf(stdout, nullptr, _IONBF, 0);
+
 	struct Options
 	{
 		// "-dbpath"
-		const char *dbpath = nullptr;
+		const char *dbpath = GetEnvNonEmpty("DB_PATH");
 
 		// "-listen"
-		const char *listenaddress = nullptr;
+		const char *listenaddress = GetEnvNonEmpty("LISTEN_ADDRESS");
 	} opts;
 	for (int i = 1; i < argc; i++)
 	{
-		if (std::strcmp(argv[i], "-dbpath") == 0 && i + 1 < argc)
-		{
-			opts.dbpath = argv[i + 1];
-			i += 1;
-		}
-		else if (std::strcmp(argv[i], "-listen") == 0 && i + 1 < argc)
-		{
-			opts.listenaddress = argv[i + 1];
-			i += 1;
-		}
+		if (auto value = GetArgNonEmpty("-dbpath", i, argc, argv))
+			opts.dbpath = value.value();
+		else if (auto value = GetArgNonEmpty("-listen", i, argc, argv))
+			opts.listenaddress = value.value();
 	}
 
 // We first do this to initialise the server
