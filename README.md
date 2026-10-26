@@ -2,6 +2,8 @@
 
 Join and check your console for your pet information
 
+I am hosting this, use `connect eggserver.beepisla.com` in the CS2 console to view your pet information, after joining scroll up in your console to view your pet data.
+
 ## How does this work?
 
 Pets are technically items in your inventory, they don't show up anywhere in your inventory but they are defined as actual items.
