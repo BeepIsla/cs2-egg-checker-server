@@ -356,8 +356,8 @@ void CGCClient::OnPet(CClient *client, CSOEconItem &pet)
 		}
 	}
 
-	std::string result = lines | std::views::join_with('\n') | std::ranges::to<std::string>();
-	client->PrintToConsole(result);
+	for (const std::string &line : lines)
+		client->PrintToConsole(line + '\n');
 }
 
 void CGCClient::OnMessage(uint32_t wireType, std::unique_ptr<uint8_t[]> &data, size_t size)
