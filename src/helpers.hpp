@@ -145,7 +145,7 @@ inline std::string FormatTimestampToUTCString(std::int64_t timestamp_seconds)
 	int minutes     = tod.minutes().count();
 	int seconds_val = tod.seconds().count();
 
-	return std::format("{}{} {} {} at {:02}:{:02}:{:02}{} UTC", day, GetOrdinalSuffix(day), month, year, hours_24, minutes, seconds_val, is_pm ? "pm" : "am");
+	return std::format("{}{} {} {} at {:02}:{:02}:{:02} UTC", day, GetOrdinalSuffix(day), month, year, hours_24, minutes, seconds_val);
 }
 
 inline std::optional<std::string> FormatTimeLeftDuration(std::int64_t timestamp_seconds)
