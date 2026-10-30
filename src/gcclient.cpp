@@ -304,7 +304,7 @@ void CGCClient::OnPet(CClient *client, CSOEconItem &pet)
 		        "Visited",
 		        {
 		            {0, "Ancient"},
-		            {1, "Anubis"},
+		            // {1, "Anubis"}, // Can't be unlocked, Valve fucked something up, its not used by the game anyways
 		            {2, "Baggage"},
 		            {3, "Cache"},
 		            {4, "Dust II"},
