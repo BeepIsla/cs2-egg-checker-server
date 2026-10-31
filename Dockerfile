@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
 
 COPY submodules/s2sdk/lib/linux64/release ./submodules/s2sdk/lib/linux64/release
 COPY submodules/s2sdk/thirdparty/protobuf-3.21.8/src ./submodules/s2sdk/thirdparty/protobuf-3.21.8/src
+COPY submodules/s2sdk/mathlib/IceKey.cpp ./submodules/s2sdk/mathlib/IceKey.cpp
+COPY submodules/s2sdk/public/mathlib/IceKey.H ./submodules/s2sdk/public/mathlib/IceKey.H
 COPY submodules/steamworks/redistributable_bin/linux64 ./submodules/steamworks/redistributable_bin/linux64
 COPY submodules/steamworks/public ./submodules/steamworks/public
 COPY submodules/sqlite ./submodules/sqlite
