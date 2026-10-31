@@ -76,6 +76,7 @@ public:
 	void       Send(const IGCProtoMsg &msg);
 	void       OnSOCache(const CMsgSOCacheSubscribed &cache, bool pushBackCacheTime = false);
 	ItemCache *FindCache(CSteamID owner, bool createIfNotFound = false);
+	void       DeleteCache(CSteamID owner);
 	STEAM_GAMESERVER_CALLBACK(CGCClient, OnGCMessageAvailable, GCMessageAvailable_t);
 	STEAM_GAMESERVER_CALLBACK(CGCClient, OnSteamServersDisconnected, SteamServersDisconnected_t);
 	STEAM_GAMESERVER_CALLBACK(CGCClient, OnSteamServerConnectFailure, SteamServerConnectFailure_t);

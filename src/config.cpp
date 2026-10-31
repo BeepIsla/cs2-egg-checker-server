@@ -115,11 +115,13 @@ bool CConfig::Init(int argc, char **argv)
 {
 	GET_ENV(dbpath, const char *, "DB_PATH");
 	GET_ENV(listenaddress, SteamNetworkingIPAddr, "LISTEN_ADDRESS");
+	GET_ENV(cachebypasspassword, const char *, "CACHE_BYPASS_PASSWORD");
 
 	for (int i = 1; i < argc; i++)
 	{
 		GET_ARG(dbpath, const char *, "-dbpath");
 		GET_ARG(listenaddress, SteamNetworkingIPAddr, "-listen");
+		GET_ARG(cachebypasspassword, const char *, "-cachebypasspassword");
 	}
 
 	return true;

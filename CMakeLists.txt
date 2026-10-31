@@ -31,6 +31,7 @@ add_executable(cs2-egg-checker-server
 	src/gcclient.cpp
 	src/db.cpp
 	src/config.cpp
+	submodules/s2sdk/mathlib/IceKey.cpp
 
 	src/protobufs/valveextensions.pb.cc
 	src/protobufs/source2_steam_stats.pb.cc

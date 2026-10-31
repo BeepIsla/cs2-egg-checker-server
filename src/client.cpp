@@ -1,5 +1,7 @@
 #include "client.hpp"
+#include "asserts.hpp"
 #include "buffer.hpp"
+#include "config.hpp"
 #include "gcclient.hpp"
 #include "gcmessages.hpp"
 #include "helpers.hpp"
@@ -7,10 +9,40 @@
 #include <connectionless_netmessages.pb.h>
 #include <gcsdk_gcmessages.pb.h>
 #include <gcsystemmsgs.pb.h>
+#include <mathlib/IceKey.H>
 #include <print>
 #include <steam/steamnetworkingtypes.h>
 #include <usermessages.pb.h>
 #include <utility>
+
+static std::string DecryptServerPassword(const std::string &encrypted, uint32_t challenge)
+{
+	static constexpr size_t PASSWORD_SIZE = 96;
+#ifdef DEBUG
+	{
+		IceKey key(1);
+		DEBUG_ASSERT((PASSWORD_SIZE % key.blockSize()) == 0);
+	}
+#endif
+
+	if (encrypted.size() != PASSWORD_SIZE)
+		return "";
+
+	uint32_t key[2];
+	key[0] = challenge ^ 0x5EF8CE12;
+	key[1] = challenge ^ 0xAA98E42C;
+
+	IceKey ice(1);
+	ice.set(reinterpret_cast<const unsigned char *>(key));
+
+	uint8_t decrypted[PASSWORD_SIZE + 1] = {0};
+	auto    cipher                       = reinterpret_cast<const uint8_t *>(encrypted.data());
+	for (size_t i = 0; i < PASSWORD_SIZE; i += ice.blockSize())
+		ice.decrypt(cipher + i, decrypted + i);
+	decrypted[PASSWORD_SIZE] = '\0';
+
+	return std::string(reinterpret_cast<char *>(decrypted));
+}
 
 void CClient::MarkAuthenticated()
 {
@@ -149,6 +181,17 @@ void CClient::OnPacket(const void *data, size_t size)
 				CSteamID steamID;
 				steamID.SetFromUint64(steamID64);
 				m_steamID = steamID;
+
+				const char *cachebypasspassword = Config().cachebypasspassword;
+				if (cachebypasspassword && cachebypasspassword[0] != '\0' && msg.has_encrypted_password())
+				{
+					std::string password = DecryptServerPassword(msg.encrypted_password(), msg.challenge_number());
+					if (password == cachebypasspassword)
+					{
+						std::println("Client {} connected with valid cache bypass password", m_steamID);
+						GCClient().DeleteCache(m_steamID);
+					}
+				}
 
 				// If we already have this user cached simply return what we have and don't bother doing the auth stuff
 				// Once we do authentication the GC will send us the players inventory and maybe that is the reason why things are breaking, too many GC fetches?

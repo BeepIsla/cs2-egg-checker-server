@@ -26,6 +26,7 @@ Options:
 
 - `-dbpath <file>`: Where to write our analytics, sqlite3 file, no analytics if not provided (Environment variable: `DB_PATH`)
 - `-listen <address>`: What IP to listen on, P2P if not provided (Environment variable: `LISTEN_ADDRESS`)
+- `-cachebypasspassword`: If the client provides this password then the cache will be ignored (Environment variable: `CACHE_BYPASS_PASSWORD`)
 
 Command-line arguments take priority over environment variables. Setting an argument to an empty string cancels out the environment variable (e.g. running with `-dbpath ""` overrides `DB_PATH` to disable analytics).
 

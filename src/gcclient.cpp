@@ -522,6 +522,15 @@ CGCClient::ItemCache *CGCClient::FindCache(CSteamID owner, bool createIfNotFound
 	return nullptr;
 }
 
+void CGCClient::DeleteCache(CSteamID owner)
+{
+	auto it = std::find_if(m_socache.begin(), m_socache.end(), [owner](const ItemCache &cache) -> bool {
+		return cache.m_owner == owner;
+	});
+	if (it != m_socache.end())
+		m_socache.erase(it);
+}
+
 void CGCClient::OnHTTPRequestCompleted(HTTPRequestCompleted_t *pResult, bool bIOFailure)
 {
 	CAutoRelease steamRelease([pResult]() {

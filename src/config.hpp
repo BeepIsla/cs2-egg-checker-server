@@ -12,6 +12,9 @@ public:
 	// "-listen"
 	std::optional<SteamNetworkingIPAddr> listenaddress = std::nullopt;
 
+	// "-cachebypasspassword"
+	const char *cachebypasspassword = nullptr;
+
 public:
 	bool Init(int argc, char **argv);
 };
