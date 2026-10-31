@@ -1,4 +1,5 @@
 #include "asserts.hpp"
+#include "config.hpp"
 #include "db.hpp"
 #include "gcclient.hpp"
 #include "helpers.hpp"
@@ -111,27 +112,26 @@ int main(int argc, char **argv)
 	SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Msg, OnSteamNetworkingSocketsDebugOutput);
 #endif
 
-	SteamNetworkingIPAddr addr;
-	addr.Clear();
-	if (opts.listenaddress && (!addr.ParseString(opts.listenaddress) || addr.m_port == 0))
-	{
-		std::println("Failed to parse given address '{}'", opts.listenaddress);
-		return 1;
-	}
+	// SteamNetworkingIPAddr parser relies on ISteamNetworkingUtils, so we have to initialise the config after Steam or we crash
+	if (!Config().Init(argc, argv))
+		return 1; // Error already logged
+
+
+	std::optional<SteamNetworkingIPAddr> listenaddress = Config().listenaddress;
 
 	// Cleaned up by CServer
 	HSteamListenSocket listensocket = k_HSteamListenSocket_Invalid;
-	if (addr.m_port == 0)
+	if (!listenaddress.has_value())
 	{
 		listensocket = SteamGameServerNetworkingSockets()->CreateListenSocketP2P(0, 0, nullptr);
 		std::println("Listening on Steam P2P socket");
 	}
 	else
 	{
-		listensocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(addr, 0, nullptr);
+		listensocket = SteamGameServerNetworkingSockets()->CreateListenSocketIP(listenaddress.value(), 0, nullptr);
 
 		char addrStr[SteamNetworkingIPAddr::k_cchMaxString];
-		addr.ToString(addrStr, sizeof(addrStr), true);
+		listenaddress->ToString(addrStr, sizeof(addrStr), true);
 		std::println("Listening on {}", addrStr);
 	}
 	if (listensocket == k_HSteamListenSocket_Invalid)
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 	}
 
 	// Database
-	DB().Init(opts.dbpath);
+	DB().Init();
 	CAutoRelease dbShutdown([]() {
 		DB().Close();
 	});

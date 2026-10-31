@@ -30,6 +30,7 @@ add_executable(cs2-egg-checker-server
 	src/server.cpp
 	src/gcclient.cpp
 	src/db.cpp
+	src/config.cpp
 
 	src/protobufs/valveextensions.pb.cc
 	src/protobufs/source2_steam_stats.pb.cc
@@ -49,6 +50,7 @@ add_executable(cs2-egg-checker-server
 target_include_directories(cs2-egg-checker-server PUBLIC
 	src/protobufs
 	${CMAKE_SOURCE_DIR}/submodules/steamworks/public
+	${CMAKE_SOURCE_DIR}/submodules/s2sdk/public
 	${CMAKE_SOURCE_DIR}/submodules/s2sdk/thirdparty/protobuf-3.21.8/src
 )
 

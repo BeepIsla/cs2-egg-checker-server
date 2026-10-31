@@ -1,4 +1,5 @@
 #include "db.hpp"
+#include "config.hpp"
 #include "helpers.hpp"
 #include <chrono>
 #include <gcsdk_gcmessages.pb.h>
@@ -18,8 +19,9 @@ static const char *SQL_STMT  = "INSERT INTO egg_checker_analytics"
                                "VALUES"
                                "(?, ?, ?, ?, ?);";
 
-void CDB::Init(const char *dbpath)
+void CDB::Init()
 {
+	const char *dbpath = Config().dbpath;
 	if (m_db || !dbpath || dbpath[0] == '\0')
 		return;
 

@@ -29,7 +29,7 @@ private:
 	sqlite3_stmt *m_stmt = nullptr;
 
 public:
-	void Init(const char *dbpath);
+	void Init();
 	void Close();
 	void SyncTrackUser(CSteamID steamID, EUserResult result, const char *extra = nullptr, const CMsgSOCacheSubscribed *socache = nullptr);
 };
